@@ -1,31 +1,48 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    DOCKERHUB_CREDENTIALS = credentials('dockerhub')
-  }
-  stages {
-    stage('Build') {
-      steps {
-        sh 'docker build -t username/srping spring/'
-        sh 'docker build -t username/angular angular/'
-      }
+    environment {
+        JAVA_HOME = tool 'JDK-17'
     }
-    stage('Login') {
-      steps {
-        sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
-      }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    bat "./mvnw clean install"
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                script {
+                    bat "./mvnw test"
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                // Add deployment steps here (e.g., deploy to a server)
+            }
+        }
     }
-    stage('Push') {
-      steps {
-        sh 'docker push username/spring'
-        sh 'docker push username/angular'
-      }
+
+    post {
+        success {
+            echo 'Build and deployment successful!'
+        }
+        failure {
+            echo 'Build or deployment failed!'
+        }
     }
-  }
-  post {
-    always {
-      sh 'docker logout'
-    }
-  }
 }
+
+  
